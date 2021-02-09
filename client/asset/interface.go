@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"decred.org/dcrdex/dex"
+	"github.com/skynet0590/atomicSwapTool/dex"
 )
 
 // CoinNotFoundError is returned when a coin cannot be found, either because it

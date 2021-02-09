@@ -3,7 +3,7 @@
 
 package btc
 
-import "decred.org/dcrdex/dex"
+import "github.com/skynet0590/atomicSwapTool/dex"
 
 // GetBalancesResult models a successful response from the getbalances request.
 type GetBalancesResult struct {

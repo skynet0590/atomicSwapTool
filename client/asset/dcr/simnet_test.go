@@ -24,10 +24,10 @@ import (
 	"testing"
 	"time"
 
-	"decred.org/dcrdex/client/asset"
-	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/dex/config"
-	dexdcr "decred.org/dcrdex/dex/networks/dcr"
+	"github.com/skynet0590/atomicSwapTool/client/asset"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	"github.com/skynet0590/atomicSwapTool/dex/config"
+	dexdcr "github.com/skynet0590/atomicSwapTool/dex/networks/dcr"
 	"github.com/decred/dcrd/chaincfg/v3"
 )
 

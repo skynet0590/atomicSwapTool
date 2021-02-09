@@ -6,12 +6,12 @@ package ltc
 import (
 	"fmt"
 
-	"decred.org/dcrdex/client/asset"
-	"decred.org/dcrdex/client/asset/btc"
-	"decred.org/dcrdex/dex"
-	dexbtc "decred.org/dcrdex/dex/networks/btc"
-	dexltc "decred.org/dcrdex/dex/networks/ltc"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/skynet0590/atomicSwapTool/client/asset"
+	"github.com/skynet0590/atomicSwapTool/client/asset/btc"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	dexbtc "github.com/skynet0590/atomicSwapTool/dex/networks/btc"
+	dexltc "github.com/skynet0590/atomicSwapTool/dex/networks/ltc"
 )
 
 const (

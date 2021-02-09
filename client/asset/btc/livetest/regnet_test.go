@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"testing"
 
-	"decred.org/dcrdex/client/asset/btc"
-	"decred.org/dcrdex/dex"
-	dexbtc "decred.org/dcrdex/dex/networks/btc"
+	"github.com/skynet0590/atomicSwapTool/client/asset/btc"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	dexbtc "github.com/skynet0590/atomicSwapTool/dex/networks/btc"
 )
 
 const (

@@ -26,10 +26,10 @@ import (
 	"testing"
 	"time"
 
-	"decred.org/dcrdex/client/asset"
-	"decred.org/dcrdex/client/asset/btc"
-	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/dex/config"
+	"github.com/skynet0590/atomicSwapTool/client/asset"
+	"github.com/skynet0590/atomicSwapTool/client/asset/btc"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	"github.com/skynet0590/atomicSwapTool/dex/config"
 )
 
 type WalletConstructor func(cfg *asset.WalletConfig, logger dex.Logger, network dex.Network) (asset.Wallet, error)

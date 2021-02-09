@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"decred.org/dcrdex/dex"
+	"github.com/skynet0590/atomicSwapTool/dex"
 )
 
 var (

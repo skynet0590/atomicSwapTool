@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/dex/config"
 	"github.com/decred/dcrd/chaincfg/v3"
 	"github.com/decred/dcrd/dcrutil/v3"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	"github.com/skynet0590/atomicSwapTool/dex/config"
 )
 
 const (

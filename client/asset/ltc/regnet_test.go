@@ -17,9 +17,9 @@ package ltc
 import (
 	"testing"
 
-	"decred.org/dcrdex/client/asset/btc/livetest"
-	"decred.org/dcrdex/dex"
-	dexbtc "decred.org/dcrdex/dex/networks/btc"
+	"github.com/skynet0590/atomicSwapTool/client/asset/btc/livetest"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	dexbtc "github.com/skynet0590/atomicSwapTool/dex/networks/btc"
 )
 
 const alphaAddress = "mt9hgfXXbM3x7hewgEAovBwqoMAAnctJ4V"
