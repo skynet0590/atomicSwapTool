@@ -4,8 +4,8 @@
 package db
 
 import (
-	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/dex/order"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	"github.com/skynet0590/atomicSwapTool/dex/order"
 )
 
 // DB is an interface that must be satisfied by a DEX client persistent storage

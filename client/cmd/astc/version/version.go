@@ -24,7 +24,7 @@ const (
 const (
 	AppName  string = "astc"
 	AppMajor uint   = 0
-	AppMinor uint   = 2
+	AppMinor uint   = 0
 	AppPatch uint   = 0
 )
 

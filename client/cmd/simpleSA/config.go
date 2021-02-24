@@ -1,20 +1,16 @@
-// This code is available on the terms of the project LICENSE.md file,
-// also available online at https://blueoakcouncil.org/license/1.0.0.
-
 package main
 
 import (
 	"fmt"
+	"github.com/decred/dcrd/dcrutil/v3"
+	"github.com/jessevdk/go-flags"
+	"github.com/skynet0590/atomicSwapTool/client/cmd/astc/version"
+	"github.com/skynet0590/atomicSwapTool/dex"
 	"os"
 	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/decred/dcrd/dcrutil/v3"
-	flags "github.com/jessevdk/go-flags"
-	"github.com/skynet0590/atomicSwapTool/client/cmd/astc/version"
-	"github.com/skynet0590/atomicSwapTool/dex"
 )
 
 const (
@@ -38,49 +34,19 @@ var (
 	cfg                         *Config
 )
 
-// setNet sets the filepath for the network directory and some network specific
-// files. It returns a suggested path for the database file.
-func setNet(applicationDirectory, net string) string {
-	netDirectory = filepath.Join(applicationDirectory, net)
-	logDirectory = filepath.Join(netDirectory, "logs")
-	logFilename = filepath.Join(logDirectory, "dexc.log")
-	err := os.MkdirAll(netDirectory, 0700)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create net directory: %v\n", err)
-		os.Exit(1)
-	}
-	err = os.MkdirAll(logDirectory, 0700)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create log directory: %v\n", err)
-		os.Exit(1)
-	}
-	return filepath.Join(netDirectory, "dexc.db")
-}
-
-// defaultHostByNetwork accepts configured network and returns the network
-// specific default host
-func defaultHostByNetwork(network dex.Network) string {
-	switch network {
-	case dex.Testnet:
-		return defaultTestnetHost
-	case dex.Simnet:
-		return defaultSimnetHost
-	default:
-		return defaultMainnetHost
-	}
-}
-
 // Config is the configuration for the DEX client application.
 type Config struct {
 	AppData      string `long:"appdata" description:"Path to application directory."`
 	Config       string `long:"config" description:"Path to an INI configuration file."`
 	DBPath       string `long:"db" description:"Database filepath. Database will be created if it does not exist."`
+	RPCOn        bool   `long:"rpc" description:"turn on the rpc server"`
 	RPCAddr      string `long:"rpcaddr" description:"RPC server listen address"`
 	RPCUser      string `long:"rpcuser" description:"RPC server user name"`
 	RPCPass      string `long:"rpcpass" description:"RPC server password"`
 	RPCCert      string `long:"rpccert" description:"RPC server certificate file location"`
 	RPCKey       string `long:"rpckey" description:"RPC server key file location"`
 	WebAddr      string `long:"webaddr" description:"HTTP server address"`
+	NoWeb        bool   `long:"noweb" description:"disable the web server."`
 	Testnet      bool   `long:"testnet" description:"use testnet"`
 	Simnet       bool   `long:"simnet" description:"use simnet"`
 	ReloadHTML   bool   `long:"reload-html" description:"Reload the webserver's page template with every request. For development purposes."`
@@ -101,7 +67,6 @@ var defaultConfig = Config{
 		defaultMainnetHost},
 }
 
-// configure processes the application configuration.
 func configure() (*Config, error) {
 	// Pre-parse the command line options to see if an alternative config file
 	// or the version flag was specified. Override any environment variables
@@ -201,6 +166,38 @@ func configure() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// setNet sets the filepath for the network directory and some network specific
+// files. It returns a suggested path for the database file.
+func setNet(applicationDirectory, net string) string {
+	netDirectory = filepath.Join(applicationDirectory, net)
+	logDirectory = filepath.Join(netDirectory, "logs")
+	logFilename = filepath.Join(logDirectory, "dexc.log")
+	err := os.MkdirAll(netDirectory, 0700)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create net directory: %v\n", err)
+		os.Exit(1)
+	}
+	err = os.MkdirAll(logDirectory, 0700)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create log directory: %v\n", err)
+		os.Exit(1)
+	}
+	return filepath.Join(netDirectory, "dexc.db")
+}
+
+// defaultHostByNetwork accepts configured network and returns the network
+// specific default host
+func defaultHostByNetwork(network dex.Network) string {
+	switch network {
+	case dex.Testnet:
+		return defaultTestnetHost
+	case dex.Simnet:
+		return defaultSimnetHost
+	default:
+		return defaultMainnetHost
+	}
 }
 
 // cleanAndExpandPath expands environment variables and leading ~ in the passed

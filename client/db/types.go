@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"decred.org/dcrdex/client/asset"
-	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/dex/config"
-	"decred.org/dcrdex/dex/encode"
-	"decred.org/dcrdex/dex/order"
+	"github.com/skynet0590/atomicSwapTool/client/asset"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	"github.com/skynet0590/atomicSwapTool/dex/config"
+	"github.com/skynet0590/atomicSwapTool/dex/encode"
+	"github.com/skynet0590/atomicSwapTool/dex/order"
 	"github.com/decred/dcrd/dcrec/secp256k1/v3"
 	"golang.org/x/crypto/blake2s"
 )
