@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	gioApp "gioui.org/app"
-	"gioui.org/unit"
 	"github.com/skynet0590/atomicSwapTool/client/gui"
 	"os"
 	"os/signal"
@@ -86,16 +85,11 @@ func main() {
 	wg.Wait()
 	log.Info("Exiting dexc main.")
 	closeFileLogger()*/
-
-	ui := gui.NewUI()
+	w := gui.NewWindow(clientCore)
 
 	// This creates a new application window and starts the UI.
 	go func() {
-		w := gioApp.NewWindow(
-			gioApp.Title("Atomic Swap"),
-			gioApp.Size(unit.Dp(360), unit.Dp(47)),
-		)
-		if err := ui.Run(w); err != nil {
+		if err := w.Loop(); err != nil {
 			log.Error(err)
 			os.Exit(1)
 		}
