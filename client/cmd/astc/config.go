@@ -54,7 +54,7 @@ func setNet(applicationDirectory, net string) string {
 		fmt.Fprintf(os.Stderr, "failed to create log directory: %v\n", err)
 		os.Exit(1)
 	}
-	return filepath.Join(netDirectory, "dexc.db")
+	return filepath.Join(netDirectory, "astc.db")
 }
 
 // defaultHostByNetwork accepts configured network and returns the network
