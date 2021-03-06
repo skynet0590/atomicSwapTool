@@ -4,7 +4,6 @@
 package gui
 
 import (
-	"fmt"
 	"gioui.org/app"
 	"gioui.org/font/gofont"
 	"gioui.org/io/system"
@@ -43,6 +42,10 @@ type (
 		nav         *component.NavDrawer
 		navAnim     *component.VisibilityAnimation
 		Color       Color
+		TextSize              unit.Value
+
+		Clipboard     chan string
+		ReadClipboard chan interface{}
 	}
 	Page interface {
 		Layout(gtx C) D
@@ -122,7 +125,6 @@ func (w *Window) Loop() error {
 				page := w.pages[w.currentPage]
 				content := layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 					user := w.core.User()
-					fmt.Println(user.Initialized, len(user.Exchanges))
 
 					if user.Initialized {
 						return layout.Flex{}.Layout(gtx,
@@ -177,7 +179,7 @@ func (w *Window) initProperties() {
 	c := Color{
 		Primary:    rgb(0x2970ff), // key blue
 		Secondary:  rgb(0x091440), // dark blue
-		// Text:       rgb(0xffffff),
+		Text:       rgb(0x000000),
 		Hint:       rgb(0xbbbbbb),
 		Overlay:    rgb(0x000000),
 		InvText:    rgb(0xffffff),
@@ -191,6 +193,8 @@ func (w *Window) initProperties() {
 		LightGray:  rgb(0xc4cbd2),
 	}
 	w.Color = c
+	w.TextSize = unit.Sp(16)
+	w.Clipboard = make(chan string)
 }
 
 func rgb(c uint32) color.NRGBA {
@@ -225,4 +229,13 @@ func fill(gtx layout.Context, col color.NRGBA) layout.Dimensions {
 	st.Load()
 
 	return layout.Dimensions{Size: d}
+}
+
+func (w *Window) GetClipboard() string {
+	txt := <-w.Clipboard
+	return txt
+}
+
+func (w *Window) SetClipboard(e interface{}) {
+	w.ReadClipboard <- e
 }

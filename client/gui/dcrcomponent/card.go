@@ -16,18 +16,10 @@ const (
 )
 
 type (
-	C = layout.Context
-	D = layout.Dimensions
 	Card struct {
 		layout.Inset
 		Color  color.NRGBA
 		Radius CornerRadius
-	}
-	CornerRadius struct {
-		NE float32
-		NW float32
-		SE float32
-		SW float32
 	}
 )
 
