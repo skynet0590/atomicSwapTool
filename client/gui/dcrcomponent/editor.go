@@ -3,6 +3,8 @@
 package dcrcomponent
 
 import (
+	"github.com/skynet0590/atomicSwapTool/client/gui/validate"
+	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
 
 	"github.com/planetdecred/godcr/ui/values"
@@ -22,27 +24,25 @@ type Editor struct {
 	Clipboard Clipboard
 	material.EditorStyle
 
-	TitleLabel material.LabelStyle
-	ErrorLabel material.LabelStyle
-	LineColor  color.NRGBA
+	TitleLabel   Label
+	ErrorLabel   Label
+	LineColor    color.NRGBA
 	DangerColor  color.NRGBA
 	SurfaceColor color.NRGBA
-	HintColor color.NRGBA
+	HintColor    color.NRGBA
 
 	FlexWidth float32
 	//IsVisible if true, displays the paste and clear button.
 	IsVisible bool
-	//IsRequired if true, displays a required field text at the buttom of the editor.
-	IsRequired bool
 	//IsTitleLabel if true makes the title label visible.
 	IsTitleLabel bool
 	//Bordered if true makes the adds a border around the editor.
 	Bordered bool
 
-	RequiredErrorText string
+	pasteBtnMaterial material.IconButtonStyle
+	clearBtMaterial  material.IconButtonStyle
 
-	PasteBtnMaterial material.IconButtonStyle
-	ClearBtMaterial  material.IconButtonStyle
+	Validators []validate.Validator
 
 	M2 unit.Value
 	M5 unit.Value
@@ -50,6 +50,7 @@ type Editor struct {
 
 func (e Editor) Layout(gtx layout.Context) layout.Dimensions {
 	e.handleEvents()
+
 	if e.IsVisible {
 		e.FlexWidth = 20
 	}
@@ -66,11 +67,6 @@ func (e Editor) Layout(gtx layout.Context) layout.Dimensions {
 		e.Hint = ""
 	}
 
-	if e.IsRequired && !e.Editor.Focused() && e.Editor.Len() == 0 {
-		e.ErrorLabel.Text = e.RequiredErrorText
-		e.LineColor = e.DangerColor
-	}
-
 	if e.ErrorLabel.Text != "" {
 		e.LineColor, e.TitleLabel.Color = e.DangerColor, e.DangerColor
 	}
@@ -78,40 +74,45 @@ func (e Editor) Layout(gtx layout.Context) layout.Dimensions {
 	return layout.UniformInset(e.M2).Layout(gtx, func(gtx C) D {
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 			layout.Rigid(func(gtx C) D {
-				return layout.Stack{}.Layout(gtx,
-					layout.Stacked(func(gtx C) D {
-						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-							layout.Rigid(func(gtx C) D {
-								return e.editorLayout(gtx)
-							}),
-							layout.Rigid(func(gtx C) D {
-								if e.ErrorLabel.Text != "" {
-									inset := layout.Inset{
-										Top:  e.M2,
-										Left: e.M5,
+				return layout.Inset{
+					Top:    values.MarginPadding5,
+					Bottom: values.MarginPadding5,
+				}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					return layout.Stack{}.Layout(gtx,
+						layout.Stacked(func(gtx C) D {
+							return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+								layout.Rigid(func(gtx C) D {
+									return e.editorLayout(gtx)
+								}),
+								layout.Rigid(func(gtx C) D {
+									if e.ErrorLabel.Text != "" {
+										inset := layout.Inset{
+											Top:  e.M2,
+											Left: e.M5,
+										}
+										return inset.Layout(gtx, func(gtx C) D {
+											return e.ErrorLabel.Layout(gtx)
+										})
 									}
-									return inset.Layout(gtx, func(gtx C) D {
-										return e.ErrorLabel.Layout(gtx)
+									return layout.Dimensions{}
+								}),
+							)
+						}),
+						layout.Stacked(func(gtx layout.Context) layout.Dimensions {
+							if e.IsTitleLabel {
+								return layout.Inset{
+									Top:  values.MarginPaddingMinus10,
+									Left: values.MarginPadding10,
+								}.Layout(gtx, func(gtx C) D {
+									return Card{Color: e.SurfaceColor}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+										return e.TitleLabel.Layout(gtx)
 									})
-								}
-								return layout.Dimensions{}
-							}),
-						)
-					}),
-					layout.Stacked(func(gtx layout.Context) layout.Dimensions {
-						if e.IsTitleLabel {
-							return layout.Inset{
-								Top:  values.MarginPaddingMinus10,
-								Left: values.MarginPadding10,
-							}.Layout(gtx, func(gtx C) D {
-								return Card{Color: e.SurfaceColor}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									return e.TitleLabel.Layout(gtx)
 								})
-							})
-						}
-						return layout.Dimensions{}
-					}),
-				)
+							}
+							return layout.Dimensions{}
+						}),
+					)
+				})
 			}),
 		)
 	})
@@ -159,9 +160,9 @@ func (e Editor) editor(gtx layout.Context) layout.Dimensions {
 				}
 				return inset.Layout(gtx, func(gtx C) D {
 					if e.Editor.Text() == "" {
-						return e.PasteBtnMaterial.Layout(gtx)
+						return e.pasteBtnMaterial.Layout(gtx)
 					}
-					return e.ClearBtMaterial.Layout(gtx)
+					return e.clearBtMaterial.Layout(gtx)
 				})
 			}
 			return layout.Dimensions{}
@@ -169,8 +170,20 @@ func (e Editor) editor(gtx layout.Context) layout.Dimensions {
 	)
 }
 
-func (e Editor) handleEvents() {
-	if e.PasteBtnMaterial.Button.Clicked() {
+func (e *Editor) validate() {
+	for _, v := range e.Validators {
+		valid, errTxt := v.Validate(e.Editor.Text())
+		if !valid {
+			e.ErrorLabel.Text = errTxt
+			return
+		}
+	}
+	e.ClearError()
+}
+
+func (e *Editor) handleEvents() {
+	e.validate()
+	if e.pasteBtnMaterial.Button.Clicked() {
 		e.Editor.Focus()
 
 		go func() {
@@ -183,25 +196,15 @@ func (e Editor) handleEvents() {
 		}()
 	}
 
-	for e.ClearBtMaterial.Button.Clicked() {
+	for e.clearBtMaterial.Button.Clicked() {
 		e.Editor.SetText("")
 	}
 
 	if e.ErrorLabel.Text != "" {
 		e.LineColor = e.DangerColor
 	} else {
-		e.LineColor = e.HintColor
+		// e.LineColor = e.HintColor
 	}
-
-	if e.RequiredErrorText != "" {
-		e.LineColor = e.DangerColor
-	} else {
-		e.LineColor = e.HintColor
-	}
-}
-
-func (e *Editor) SetRequiredErrorText(txt string) {
-	e.RequiredErrorText = txt
 }
 
 func (e *Editor) SetError(text string) {
@@ -214,4 +217,58 @@ func (e *Editor) ClearError() {
 
 func (e *Editor) IsDirty() bool {
 	return e.ErrorLabel.Text == ""
+}
+
+func (t *Theme) Editor(hint string, validators ...validate.Validator) Editor {
+	editor := new(widget.Editor)
+	editor.SingleLine = true
+	errorLabel := t.Caption("")
+	errorLabel.Color = t.Color.Danger
+
+	m := material.Editor(t.Theme, editor, hint)
+	m.TextSize = t.TextSize
+	m.Color = t.Color.Text
+	m.Hint = hint
+	m.HintColor = t.Color.Hint
+
+	var m0 = unit.Dp(0)
+	var m25 = unit.Dp(25)
+
+	e := Editor{
+		Clipboard:    t.Clipboard,
+		EditorStyle:  m,
+		TitleLabel:   t.Body2(""),
+		FlexWidth:    0,
+		IsTitleLabel: true,
+		Bordered:     true,
+		LineColor:    t.Color.Hint,
+		HintColor:    t.Color.Hint,
+		DangerColor:  t.Color.Danger,
+		SurfaceColor: t.Color.Surface,
+		ErrorLabel:   errorLabel,
+
+		M2: unit.Dp(2),
+		M5: unit.Dp(5),
+
+		pasteBtnMaterial: material.IconButtonStyle{
+			Icon:       mustIcon(widget.NewIcon(icons.ContentContentPaste)),
+			Size:       m25,
+			Background: color.NRGBA{},
+			Color:      t.Color.Text,
+			Inset:      layout.UniformInset(m0),
+			Button:     new(widget.Clickable),
+		},
+
+		clearBtMaterial: material.IconButtonStyle{
+			Icon:       mustIcon(widget.NewIcon(icons.ContentClear)),
+			Size:       m25,
+			Background: color.NRGBA{},
+			Color:      t.Color.Text,
+			Inset:      layout.UniformInset(m0),
+			Button:     new(widget.Clickable),
+		},
+		Validators: validators,
+	}
+
+	return e
 }

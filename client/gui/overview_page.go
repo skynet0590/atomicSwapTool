@@ -19,7 +19,7 @@ func (p *overviewPage) Title() string {
 }
 
 func (p *overviewPage) Layout(gtx C) D {
-	th := p.win.theme
+	th := p.win.theme.Theme
 	return layout.Inset{
 		Top:    unit.Dp(20),
 		Right:  unit.Dp(20),

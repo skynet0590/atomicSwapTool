@@ -3,11 +3,8 @@ package dcrcomponent
 import (
 	"gioui.org/f32"
 	"gioui.org/layout"
-	"gioui.org/op"
 	"gioui.org/op/clip"
-	"gioui.org/op/paint"
 	"gioui.org/unit"
-	"image"
 	"image/color"
 )
 
@@ -50,16 +47,3 @@ func (c Card) Layout(gtx layout.Context, w layout.Widget) layout.Dimensions {
 	return dims
 }
 
-func fill(gtx layout.Context, col color.NRGBA) layout.Dimensions {
-	cs := gtx.Constraints
-	d := image.Point{X: cs.Min.X, Y: cs.Min.Y}
-	st := op.Save(gtx.Ops)
-	track := image.Rectangle{
-		Max: d,
-	}
-	clip.Rect(track).Add(gtx.Ops)
-	paint.Fill(gtx.Ops, col)
-	st.Load()
-
-	return layout.Dimensions{Size: d}
-}
