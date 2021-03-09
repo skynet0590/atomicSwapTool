@@ -4,6 +4,7 @@
 package gui
 
 import (
+	"fmt"
 	"gioui.org/app"
 	"gioui.org/font/gofont"
 	"gioui.org/io/system"
@@ -12,10 +13,12 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/x/component"
+	"gioui.org/x/notify"
 	"github.com/skynet0590/atomicSwapTool/client/core"
 	"github.com/skynet0590/atomicSwapTool/client/gui/dcrcomponent"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
+	"log"
 	"time"
 )
 
@@ -40,6 +43,7 @@ type (
 		navAnim     *component.VisibilityAnimation
 		TextSize    unit.Value
 
+		notify        notify.Manager
 		Clipboard     chan string
 		ReadClipboard chan interface{}
 	}
@@ -71,7 +75,11 @@ func NewWindow(coreClient *core.Core) *Window {
 	w.bar.Title = "Atomic Swap Client"
 	icon, _ := widget.NewIcon(icons.ActionHome)
 	w.bar.NavigationIcon = icon
-
+	notif,err := notify.NewManager()
+	if err != nil {
+		fmt.Println("Init notify failed: ", err)
+	}
+	w.notify = notif
 	w.initProperties()
 
 	// Setup left nav
@@ -175,4 +183,21 @@ func (w *Window) GetClipboard() string {
 
 func (w *Window) SetClipboard(e interface{}) {
 	w.ReadClipboard <- e
+}
+
+func (w *Window) Notify(txt string) {
+	notif, e := w.notify.CreateNotification("Atomic Swap", txt)
+	if e != nil {
+		log.Printf("notification send failed: %v", e)
+	}
+	go func() {
+		time.Sleep(time.Second * 10)
+		if e = notif.Cancel(); e != nil {
+			log.Printf("failed cancelling: %v", e)
+		}
+	}()
+}
+
+func (w *Window) ChangePage(page PageTitle) {
+	w.currentPage = page
 }

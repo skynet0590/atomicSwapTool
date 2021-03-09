@@ -215,11 +215,21 @@ func (e *Editor) ClearError() {
 	e.ErrorLabel.Text = ""
 }
 
-func (e *Editor) IsDirty() bool {
+func (e *Editor) IsValid() bool {
 	return e.ErrorLabel.Text == ""
 }
 
-func (t *Theme) Editor(hint string, validators ...validate.Validator) Editor {
+func (e *Editor) Text() string {
+	return e.Editor.Text()
+}
+
+func (t *Theme) EditorPassword(hint string, validators ...validate.Validator) *Editor {
+	editor := t.Editor(hint, validators...)
+	editor.Editor.Mask = '*'
+	return editor
+}
+
+func (t *Theme) Editor(hint string, validators ...validate.Validator) *Editor {
 	editor := new(widget.Editor)
 	editor.SingleLine = true
 	errorLabel := t.Caption("")
@@ -234,7 +244,7 @@ func (t *Theme) Editor(hint string, validators ...validate.Validator) Editor {
 	var m0 = unit.Dp(0)
 	var m25 = unit.Dp(25)
 
-	e := Editor{
+	return &Editor{
 		Clipboard:    t.Clipboard,
 		EditorStyle:  m,
 		TitleLabel:   t.Body2(""),
@@ -269,6 +279,4 @@ func (t *Theme) Editor(hint string, validators ...validate.Validator) Editor {
 		},
 		Validators: validators,
 	}
-
-	return e
 }

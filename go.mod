@@ -7,6 +7,7 @@ require (
 	decred.org/dcrwallet v1.6.0
 	gioui.org v0.0.0-20210222172543-284659d3eac9
 	gioui.org/x v0.0.0-20210120222453-b55819bc712b
+	gioui.org/x/notify v0.0.0-20210226015410-958111222865
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/decred/dcrd v1.3.0 // indirect

@@ -28,7 +28,7 @@ func (t *Theme) Password(hint string) *Password {
 		theme:          t,
 		titleLabel:     t.H6("Enter password to confirm"),
 		titleSeparator: t.Line(),
-		passwordEditor: passwordEditor,
+		passwordEditor: *passwordEditor,
 		cancelButton:   cancelButton,
 		confirmButton:  confirmButton,
 		modal:          t.Modal(),
