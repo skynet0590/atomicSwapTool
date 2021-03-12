@@ -11,10 +11,12 @@ import (
 
 type (
 	registerPage struct {
-		win          *Window
-		registerForm *registerForm
+		win           *Window
+		registerForm  *registerForm
 		dcrWalletForm *dcrWalletSettingForm
-		step         registerStep
+		dexServerForm *dexServerForm
+		confirmForm   *confirmForm
+		step          registerStep
 	}
 	registerForm struct {
 		win                 *Window
@@ -22,25 +24,28 @@ type (
 		passwordEditor      *dcrcomponent.Editor
 		passwordAgainEditor *dcrcomponent.Editor
 		submitButton        dcrcomponent.Button
+		callback            func()
 	}
-	registerStep int
+	registerStep uint
 )
 
 const (
-	registerSetPassword registerStep = 0
+	registerSetPassword registerStep = 1 << iota
 	registerDCRWallet
+	registerAddDEXform
+	registerConfirmForm
 )
 
 func (p *registerPage) Title() string {
 	return "Register"
 }
 
-func (p *registerPage) HandlerEvent() {
+func (p *registerPage) handlerEvent() {
 	p.registerForm.handlerEvent()
 }
 
 func (p *registerPage) Layout(gtx C) D {
-	p.HandlerEvent()
+	p.handlerEvent()
 	return layout.Inset{
 		Top:    unit.Dp(20),
 		Right:  unit.Dp(20),
@@ -49,12 +54,22 @@ func (p *registerPage) Layout(gtx C) D {
 	}.Layout(gtx, func(gtx layout.Context) D {
 		return p.win.theme.Card().Layout(gtx, func(gtx C) D {
 			gtx.Constraints.Min.X = gtx.Constraints.Max.X
-			return p.registerForm.Layout(gtx)
+			switch p.step {
+			case registerSetPassword:
+				return p.registerForm.Layout(gtx)
+			case registerDCRWallet:
+				return p.dcrWalletForm.Layout(gtx)
+			case registerAddDEXform:
+				return p.dexServerForm.Layout(gtx)
+			default:
+				p.win.ChangePage(overview)
+				return D{}
+			}
 		})
 	})
 }
 
-func newRegisterForm(w *Window) *registerForm {
+func newRegisterForm(w *Window, callback func()) *registerForm {
 	const passTxt = "Password"
 	passwordEditor := w.theme.EditorPassword(passTxt, validators.Required(passTxt))
 	passwordAgainEditor := w.theme.EditorPassword("Password Again", validators.MatchedInput(passTxt, passwordEditor.Editor))
@@ -63,18 +78,25 @@ func newRegisterForm(w *Window) *registerForm {
 		passwordEditor:      passwordEditor,
 		passwordAgainEditor: passwordAgainEditor,
 		submitButton:        w.theme.Button("Submit"),
+		callback:            callback,
 	}
 }
 
 func newRegisterPage(w *Window) *registerPage {
-	page := registerPage{
-		win:          w,
-		registerForm: newRegisterForm(w),
-		dcrWalletForm: newDcrWalletSetting(w),
+	page := &registerPage{
+		win:  w,
 		step: registerSetPassword,
 	}
-	page.registerForm.parents = &page
-	return &page
+	page.registerForm = newRegisterForm(w, func() {
+		page.step = registerDCRWallet
+	})
+	page.dcrWalletForm = newDcrWalletSetting(w, func() {
+		page.step = registerAddDEXform
+	})
+	page.dexServerForm = newDEXServerForm(w, func() {
+		w.ChangePage(overview)
+	})
+	return page
 }
 
 func (f *registerForm) Layout(gtx C) D {
@@ -124,12 +146,13 @@ func (f *registerForm) handlerEvent() {
 	if f.submitButton.Button.Clicked() {
 		if f.passwordEditor.IsValid() && f.passwordAgainEditor.IsValid() {
 			passTxt := f.passwordEditor.Text()
-			err := f.win.core.InitializeClient([]byte(passTxt))
+			err := f.win.core.InitializeClient(passwordFromTxt(passTxt))
 			if err == nil {
 				f.win.Notify("Initialize app success")
-				f.parents.step = registerDCRWallet
-			}else{
-				f.win.Notify(fmt.Sprintf("Initialize app faild: %v", err))
+				f.win.loggedIn = true
+				f.callback()
+			} else {
+				f.win.Notify(fmt.Sprintf("Initialize app failed: %v", err))
 			}
 		}
 	}

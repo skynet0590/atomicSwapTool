@@ -16,6 +16,7 @@ import (
 	"gioui.org/x/notify"
 	"github.com/skynet0590/atomicSwapTool/client/core"
 	"github.com/skynet0590/atomicSwapTool/client/gui/dcrcomponent"
+	"github.com/skynet0590/atomicSwapTool/dex/encode"
 	"golang.org/x/exp/shiny/materialdesign/icons"
 	"image/color"
 	"log"
@@ -46,6 +47,8 @@ type (
 		notify        notify.Manager
 		Clipboard     chan string
 		ReadClipboard chan interface{}
+
+		loggedIn     bool
 	}
 	Page interface {
 		Layout(gtx C) D
@@ -57,6 +60,7 @@ type (
 var (
 	overview PageTitle = "overview"
 	register PageTitle = "register"
+	login    PageTitle = "login"
 )
 
 // NewUI creates a new UI
@@ -95,6 +99,7 @@ func NewWindow(coreClient *core.Core) *Window {
 	w.pages = map[PageTitle]Page{
 		register: newRegisterPage(w),
 		overview: newOverviewPage(w),
+		login   : newLoginPage(w),
 	}
 	return w
 }
@@ -112,9 +117,7 @@ func (w *Window) Loop() error {
 				gtx := layout.NewContext(w.ops, evt)
 				page := w.pages[w.currentPage]
 				content := layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-					user := w.core.User()
-
-					if user.Initialized {
+					if w.loggedIn {
 						return layout.Flex{}.Layout(gtx,
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								gtx.Constraints.Max.X /= 3
@@ -185,8 +188,9 @@ func (w *Window) SetClipboard(e interface{}) {
 	w.ReadClipboard <- e
 }
 
-func (w *Window) Notify(txt string) {
-	notif, e := w.notify.CreateNotification("Atomic Swap", txt)
+func (w *Window) Notify(txt string, a ...interface{}) {
+	errMsg := fmt.Sprintf(txt, a...)
+	notif, e := w.notify.CreateNotification("Atomic Swap", errMsg)
 	if e != nil {
 		log.Printf("notification send failed: %v", e)
 	}
@@ -200,4 +204,11 @@ func (w *Window) Notify(txt string) {
 
 func (w *Window) ChangePage(page PageTitle) {
 	w.currentPage = page
+}
+
+func passwordFromTxt(txt string) encode.PassBytes {
+	pb := encode.PassBytes{}
+	err := pb.UnmarshalJSON([]byte(txt))
+	panic(err)
+	return pb
 }

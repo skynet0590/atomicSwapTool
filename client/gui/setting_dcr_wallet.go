@@ -2,6 +2,7 @@ package gui
 
 import (
 	"gioui.org/layout"
+	"github.com/skynet0590/atomicSwapTool/client/core"
 	"github.com/skynet0590/atomicSwapTool/client/gui/dcrcomponent"
 	"github.com/skynet0590/atomicSwapTool/client/gui/validate/validators"
 	"github.com/skynet0590/atomicSwapTool/client/gui/values"
@@ -20,15 +21,16 @@ type (
 		walletPasswordEditor           *dcrcomponent.Editor
 		appPasswordEditor              *dcrcomponent.Editor
 		submitButton                   dcrcomponent.Button
+		callback                       func()
 	}
 )
 
-func newDcrWalletSetting(w *Window) *dcrWalletSettingForm {
+func newDcrWalletSetting(w *Window, callback func()) *dcrWalletSettingForm {
 	th := w.theme
 	return &dcrWalletSettingForm{
 		win:                            w,
 		accountNameEditor:              th.Editor("dcrwallet account name", validators.Required("Account name")),
-		rpcUserNameEditor:              th.Editor("RPC Username",validators.Required("RPC Username")),
+		rpcUserNameEditor:              th.Editor("RPC Username", validators.Required("RPC Username")),
 		rpcPasswordEditor:              th.EditorPassword("RPC Password", validators.Required("RPC Password")),
 		rpcAddressEditor:               th.Editor("RPC Address"),
 		tlsCertificateEditor:           th.Editor("RPC Certificate"),
@@ -36,11 +38,13 @@ func newDcrWalletSetting(w *Window) *dcrWalletSettingForm {
 		redeemConfirmationTargetEditor: th.Editor("Redeem confirmation target"),
 		walletPasswordEditor:           th.EditorPassword("Wallet Password"),
 		appPasswordEditor:              th.EditorPassword("App Password"),
-
+		submitButton:                   th.Button("Add"),
+		callback:                       callback,
 	}
 }
 
 func (f *dcrWalletSettingForm) Layout(gtx C) D {
+	f.handlerEvent()
 	return layout.Flex{
 		Axis: layout.Vertical,
 	}.Layout(gtx,
@@ -99,4 +103,25 @@ func (f *dcrWalletSettingForm) Layout(gtx C) D {
 			})
 		}),
 	)
+}
+
+func (f *dcrWalletSettingForm) handlerEvent() {
+	if f.submitButton.Button.Clicked() {
+		form := &core.WalletForm{AssetID: 42, Config: map[string]string{
+			"account":          f.accountNameEditor.Text(),
+			"fallbackfee":      f.fallbackFeeRateEditor.Text(),
+			"password":         f.rpcPasswordEditor.Text(),
+			"redeemconftarget": f.redeemConfirmationTargetEditor.Text(),
+			"rpccert":          f.tlsCertificateEditor.Text(),
+			"rpclisten":        f.rpcAddressEditor.Text(),
+			"txsplit":          "0",
+			"username":         f.rpcUserNameEditor.Text(),
+		}}
+		err := f.win.core.CreateWallet(passwordFromTxt(f.appPasswordEditor.Text()), passwordFromTxt(f.walletPasswordEditor.Text()), form)
+		if err != nil {
+			f.win.Notify(err.Error())
+		} else {
+			f.callback()
+		}
+	}
 }
