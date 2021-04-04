@@ -17,11 +17,11 @@ import (
 	"sync"
 	"time"
 
-	"decred.org/dcrdex/server/account"
-	"decred.org/dcrdex/server/db"
 	"github.com/decred/slog"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/skynet0590/atomicSwapTool/server/account"
+	"github.com/skynet0590/atomicSwapTool/server/db"
 )
 
 const (

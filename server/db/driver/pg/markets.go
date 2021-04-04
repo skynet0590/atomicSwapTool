@@ -7,8 +7,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/server/db/driver/pg/internal"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	"github.com/skynet0590/atomicSwapTool/server/db/driver/pg/internal"
 )
 
 func loadMarkets(db *sql.DB, marketsTableName string) ([]*dex.MarketInfo, error) {

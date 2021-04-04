@@ -8,9 +8,9 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"decred.org/dcrdex/dex/order"
-	"decred.org/dcrdex/server/db"
-	"decred.org/dcrdex/server/db/driver/pg/internal"
+	"github.com/skynet0590/atomicSwapTool/dex/order"
+	"github.com/skynet0590/atomicSwapTool/server/db"
+	"github.com/skynet0590/atomicSwapTool/server/db/driver/pg/internal"
 	"github.com/lib/pq"
 )
 

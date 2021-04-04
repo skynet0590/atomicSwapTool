@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/dex/msgjson"
+	"github.com/skynet0590/atomicSwapTool/dex"
+	"github.com/skynet0590/atomicSwapTool/dex/msgjson"
 	"github.com/go-chi/chi"
 )
 

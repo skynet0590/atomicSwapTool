@@ -147,12 +147,12 @@ func mainCore(ctx context.Context) error {
 		}()
 	}
 
-	log.Info("The DEX is running. Hit CTRL+C to quit...")
+	log.Info("The Server is running. Hit CTRL+C to quit...")
 	<-ctx.Done()
 	// Wait for the admin server to finish.
 	wg.Wait()
 
-	log.Info("Stopping DEX...")
+	log.Info("Stopping Server...")
 	dexMan.Stop()
 	log.Info("Bye!")
 

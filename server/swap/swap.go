@@ -6,6 +6,7 @@ package swap
 import (
 	"bytes"
 	"context"
+	"decred.org/dcrdex/server/matcher"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,7 +25,7 @@ import (
 	"github.com/skynet0590/atomicSwapTool/server/coinlock"
 	"github.com/skynet0590/atomicSwapTool/server/comms"
 	"github.com/skynet0590/atomicSwapTool/server/db"
-	"github.com/skynet0590/atomicSwapTool/server/matcher"
+	// "github.com/skynet0590/atomicSwapTool/server/matcher"
 )
 
 var (

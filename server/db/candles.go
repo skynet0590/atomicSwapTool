@@ -6,8 +6,8 @@ package db
 import (
 	"time"
 
-	"decred.org/dcrdex/dex/encode"
-	"decred.org/dcrdex/dex/msgjson"
+	"github.com/skynet0590/atomicSwapTool/dex/encode"
+	"github.com/skynet0590/atomicSwapTool/dex/msgjson"
 )
 
 // Candle is a report about the trading activity of a market over some

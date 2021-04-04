@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
-	"decred.org/dcrdex/server/account"
-	"decred.org/dcrdex/server/db"
-	"decred.org/dcrdex/server/db/driver/pg/internal"
+	"github.com/skynet0590/atomicSwapTool/server/account"
+	"github.com/skynet0590/atomicSwapTool/server/db"
+	"github.com/skynet0590/atomicSwapTool/server/db/driver/pg/internal"
 	"github.com/decred/dcrd/chaincfg/chainhash"
 	"github.com/decred/dcrd/dcrutil/v3"
 	"github.com/decred/dcrd/hdkeychain/v3"

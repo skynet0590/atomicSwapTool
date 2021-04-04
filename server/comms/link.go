@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"decred.org/dcrdex/dex/msgjson"
-	"decred.org/dcrdex/dex/ws"
+	"github.com/skynet0590/atomicSwapTool/dex/msgjson"
+	"github.com/skynet0590/atomicSwapTool/dex/ws"
 )
 
 const readLimitAuthorized = 65536
