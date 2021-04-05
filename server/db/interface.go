@@ -87,7 +87,7 @@ type OrderArchiver interface {
 	Order(oid order.OrderID, base, quote uint32) (order.Order, order.OrderStatus, error)
 
 	// BookOrders returns all book orders for a market.
-	BookOrders(base, quote uint32) ([]*order.LimitOrder, error)
+	BookOrders(base, quote uint32) ([]order.Order, error)
 
 	// EpochOrders returns all epoch orders for a market.
 	EpochOrders(base, quote uint32) ([]order.Order, error)
@@ -147,7 +147,7 @@ type OrderArchiver interface {
 	// BookOrder books the given order. If the order was already stored (i.e.
 	// NewEpochOrder), it's status and filled amount are updated, otherwise it
 	// is inserted. See also UpdateOrderFilled.
-	BookOrder(*order.LimitOrder) error
+	BookOrder(order.Order) error
 
 	// ExecuteOrder puts the order into the executed state, and sets the filled
 	// amount for market and limit orders. For unmatched cancel orders, use
@@ -159,7 +159,7 @@ type OrderArchiver interface {
 	// orders must use ExecuteOrder or FailCancelOrder. Orders that are
 	// terminated by the DEX rather than via a cancel order are considered
 	// "revoked", and RevokeOrder should be used to set this status.
-	CancelOrder(*order.LimitOrder) error
+	CancelOrder(order.Order) error
 
 	// RevokeOrder puts an order into the revoked state, and generates a cancel
 	// order to record the action. Orders should be revoked by the DEX according
@@ -179,7 +179,7 @@ type OrderArchiver interface {
 	// UpdateOrderFilled updates the filled amount of the given order. This
 	// function applies only to limit orders, not cancel or market orders. The
 	// filled amount of a market order should be updated by ExecuteOrder.
-	UpdateOrderFilled(*order.LimitOrder) error
+	UpdateOrderFilled(order.Order) error
 
 	// UpdateOrderStatus updates the status and filled amount of the given
 	// order.
@@ -296,8 +296,8 @@ type MarketMatchID struct {
 func MatchID(match *order.Match) MarketMatchID {
 	return MarketMatchID{
 		MatchID: match.ID(),
-		Base:    match.Maker.BaseAsset, // same for taker's redeem as BaseAsset refers to the market
-		Quote:   match.Maker.QuoteAsset,
+		Base:    match.Maker.Base(), // same for taker's redeem as BaseAsset refers to the market
+		Quote:   match.Maker.Quote(),
 	}
 }
 

@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"decred.org/dcrdex/dex"
-	"decred.org/dcrdex/dex/order"
 )
 
 func TestMain(m *testing.M) {
@@ -108,45 +107,4 @@ func (dbs *dbStubResult) RowsAffected() (int64, error) {
 // Values is not required for driver.Result
 func (dbs *dbStubResult) Values() []driver.Value {
 	return dbs.values
-}
-
-// Test_storeLimitOrder simply exercises the Valuers (OrderID, AccountID,
-// OrderType, Commitment). Since the DB is a stub, there should never be an
-// error with storeLimitOrder in this test. The Valuers may be tested
-// independently in the order and account packages.
-func Test_storeLimitOrder(t *testing.T) {
-	stub, err := sql.Open("stub", "discardedConnectString")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	type args struct {
-		lo     *order.LimitOrder
-		status order.OrderStatus
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "ok",
-			args: args{
-				lo:     newLimitOrder(false, 4500000, 1, order.StandingTiF, 0),
-				status: order.OrderStatusBooked,
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			N, err := storeLimitOrder(stub, "dcrdex", tt.args.lo, marketToPgStatus(tt.args.status), 123456, 6000)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("storeLimitOrder() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if N != 1 {
-				t.Errorf("Expected 1 row affected, got %d", N)
-			}
-		})
-	}
 }

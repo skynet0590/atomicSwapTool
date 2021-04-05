@@ -8,12 +8,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/skynet0590/atomicSwapTool/server/account"
-	"github.com/skynet0590/atomicSwapTool/server/db"
-	"github.com/skynet0590/atomicSwapTool/server/db/driver/pg/internal"
 	"github.com/decred/dcrd/chaincfg/chainhash"
 	"github.com/decred/dcrd/dcrutil/v3"
 	"github.com/decred/dcrd/hdkeychain/v3"
+	"github.com/skynet0590/atomicSwapTool/server/account"
+	"github.com/skynet0590/atomicSwapTool/server/db"
+	"github.com/skynet0590/atomicSwapTool/server/db/driver/pg/internal"
 )
 
 // CloseAccount closes the account by setting the value of the rule column to

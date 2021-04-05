@@ -158,7 +158,7 @@ func (e *EpochID) End() time.Time {
 // Match represents a match between two orders.
 type Match struct {
 	Taker    Order
-	Maker    *LimitOrder
+	Maker    Order
 	Quantity uint64
 	Rate     uint64
 
@@ -189,7 +189,7 @@ type UserMatch struct {
 
 // A constructor for a Match with Status = NewlyMatched. This is the preferred
 // method of making a Match, since it pre-calculates and caches the match ID.
-func newMatch(taker Order, maker *LimitOrder, qty, rate uint64, epochID EpochID) *Match {
+func newMatch(taker Order, maker Order, qty, rate uint64, epochID EpochID) *Match {
 	m := &Match{
 		Taker:    taker,
 		Maker:    maker,
@@ -227,7 +227,7 @@ func (match *Match) ID() MatchID {
 type MatchSet struct {
 	Epoch   EpochID
 	Taker   Order
-	Makers  []*LimitOrder
+	Makers  []Order
 	Amounts []uint64
 	Rates   []uint64
 	Total   uint64

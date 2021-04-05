@@ -577,67 +577,6 @@ func (o *MarketOrder) Serialize() []byte {
 // Ensure MarketOrder is an Order.
 var _ Order = (*MarketOrder)(nil)
 
-// LimitOrder defines a limit order in terms of a MarketOrder and limit-specific
-// data including rate (price) and time in force.
-type LimitOrder struct {
-	P
-	T
-	Rate  uint64 // price as atoms of quote asset, applied per 1e8 units of the base asset
-	Force TimeInForce
-}
-
-// ID computes the order ID.
-func (o *LimitOrder) ID() OrderID {
-	if o.id != nil {
-		return *o.id
-	}
-	id := calcOrderID(o)
-	o.id = &id
-	return id
-}
-
-// UID computes the order ID, returning the string representation.
-func (o *LimitOrder) UID() string {
-	return o.ID().String()
-}
-
-// String is the same as UID. It is defined to satisfy Stringer.
-func (o *LimitOrder) String() string {
-	return o.UID()
-}
-
-// serializeSize returns the length of the serialized LimitOrder.
-func (o *LimitOrder) serializeSize() int {
-	return o.P.serializeSize() + o.T.serializeSize() + 8 + 1
-}
-
-// Serialize marshals the LimitOrder into a []byte.
-func (o *LimitOrder) Serialize() []byte {
-	b := make([]byte, o.serializeSize())
-	// Prefix and data common with MarketOrder
-	offset := o.P.serializeSize()
-	copy(b[:offset], o.P.Serialize())
-	tradeLen := o.T.serializeSize()
-	copy(b[offset:offset+tradeLen], o.T.Serialize())
-	offset += tradeLen
-
-	// Price rate in atoms of quote asset
-	binary.BigEndian.PutUint64(b[offset:offset+8], o.Rate)
-	offset += 8
-
-	// Time in force
-	b[offset] = uint8(o.Force)
-	return b
-}
-
-// Ensure LimitOrder is an Order.
-var _ Order = (*LimitOrder)(nil)
-
-// Price returns the limit order's price rate.
-func (o *LimitOrder) Price() uint64 {
-	return o.Rate
-}
-
 // CancelOrder defines a cancel order in terms of an order Prefix and the ID of
 // the order to be canceled.
 type CancelOrder struct {
@@ -725,30 +664,6 @@ func ValidateOrder(ord Order, status OrderStatus, lotSize uint64) error {
 
 		if ot.OrderType != CancelOrderType {
 			return fmt.Errorf("cancel order has wrong order type %d -> %s", ot.OrderType, ot.OrderType)
-		}
-
-	case *LimitOrder:
-		// Limit order OK statuses: epoch, booked, executed, and canceled (same
-		// as market plus booked).
-		switch status {
-		case OrderStatusEpoch, OrderStatusExecuted, OrderStatusRevoked:
-		case OrderStatusBooked, OrderStatusCanceled:
-			// Immediate time in force limit orders may not be canceled, and may
-			// not be in the order book.
-			if ot.Force == ImmediateTiF {
-				return fmt.Errorf("invalid immediate limit order status %d -> %s", status, status)
-			}
-		default:
-			return fmt.Errorf("invalid limit order status %d -> %s", status, status)
-		}
-
-		if ot.OrderType != LimitOrderType {
-			return fmt.Errorf("limit order has wrong order type %d -> %s", ot.OrderType, ot.OrderType)
-		}
-
-		// All limit orders must respect lot size.
-		if ot.Quantity%lotSize != 0 || ot.Remaining()%lotSize != 0 {
-			return fmt.Errorf("limit order fails lot size requirement %d %% %d = %d", ot.Quantity, lotSize, ot.Quantity%lotSize)
 		}
 	default:
 		// cannot validate an unknown order type

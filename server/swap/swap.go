@@ -67,7 +67,7 @@ type Storage interface {
 	LastErr() error
 	Fatal() <-chan struct{}
 	Order(oid order.OrderID, base, quote uint32) (order.Order, order.OrderStatus, error)
-	CancelOrder(*order.LimitOrder) error
+	CancelOrder(ord order.Order) error
 	InsertMatch(match *order.Match) error
 }
 
@@ -331,7 +331,7 @@ func (s *Swapper) UserSwappingAmt(user account.AccountID, base, quote uint32) (a
 		return
 	}
 	for _, mt := range um {
-		if mt.Maker.BaseAsset == base && mt.Maker.QuoteAsset == quote {
+		if mt.Maker.Base() == base && mt.Maker.Quote() == quote {
 			amt += mt.Quantity
 			count++
 		}
@@ -1118,12 +1118,12 @@ func (s *Swapper) step(user account.AccountID, matchID order.MatchID) (*stepInfo
 	// Set the actors' swapAsset and the swap contract checkVal.
 	var checkVal uint64
 	if isBaseAsset {
-		actor.swapAsset = maker.BaseAsset
-		counterParty.swapAsset = maker.QuoteAsset
+		actor.swapAsset = maker.Base()
+		counterParty.swapAsset = maker.Quote()
 		checkVal = match.Quantity
 	} else {
-		actor.swapAsset = maker.QuoteAsset
-		counterParty.swapAsset = maker.BaseAsset
+		actor.swapAsset = maker.Quote()
+		counterParty.swapAsset = maker.Base()
 		checkVal = matcher.BaseToQuote(maker.Rate, match.Quantity)
 	}
 
@@ -2020,7 +2020,7 @@ func readMatches(matchSets []*order.MatchSet, feeRates map[uint32]uint64) []*mat
 	for _, matchSet := range matchSets {
 		for _, match := range matchSet.Matches( /* consider taking feeRates */ ) {
 			maker := match.Maker
-			base, quote := maker.BaseAsset, maker.QuoteAsset
+			base, quote := maker.Base(), maker.Quote()
 			var makerSwapAsset, takerSwapAsset uint32
 			if maker.Sell {
 				makerSwapAsset = base

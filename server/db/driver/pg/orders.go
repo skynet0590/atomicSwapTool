@@ -295,7 +295,7 @@ func (a *Archiver) FlushBook(base, quote uint32) (sellsRemoved, buysRemoved []or
 // BookOrders retrieves all booked orders (with order status booked) for the
 // specified market. This will be used to repopulate a market's book on
 // construction of the market.
-func (a *Archiver) BookOrders(base, quote uint32) ([]*order.LimitOrder, error) {
+func (a *Archiver) BookOrders(base, quote uint32) ([]order.Order, error) {
 	marketSchema, err := a.marketSchema(base, quote)
 	if err != nil {
 		return nil, err
@@ -311,11 +311,11 @@ func (a *Archiver) BookOrders(base, quote uint32) ([]*order.LimitOrder, error) {
 	}
 
 	// Verify loaded orders are limits, and cast to *LimitOrder.
-	limits := make([]*order.LimitOrder, 0, len(ords))
+	limits := make([]order.Order, 0, len(ords))
 	for _, ord := range ords {
-		lo, ok := ord.(*order.LimitOrder)
+		lo, ok := ord.(order.Order)
 		if !ok {
-			log.Errorf("loaded book order %v that was not a limit order", ord.ID())
+			log.Errorf("loaded book order %v that was not an order", ord.ID())
 			continue
 		}
 
@@ -328,14 +328,11 @@ func (a *Archiver) BookOrders(base, quote uint32) ([]*order.LimitOrder, error) {
 // EpochOrders retrieves all epoch orders for the specified market returns them
 // as a slice of order.Order.
 func (a *Archiver) EpochOrders(base, quote uint32) ([]order.Order, error) {
-	los, mos, cos, err := a.epochOrders(base, quote)
+	mos, cos, err := a.epochOrders(base, quote)
 	if err != nil {
 		return nil, err
 	}
-	orders := make([]order.Order, 0, len(los)+len(mos)+len(cos))
-	for _, o := range los {
-		orders = append(orders, o)
-	}
+	orders := make([]order.Order, 0, len(mos)+len(cos))
 	for _, o := range mos {
 		orders = append(orders, o)
 	}
@@ -346,10 +343,10 @@ func (a *Archiver) EpochOrders(base, quote uint32) ([]order.Order, error) {
 }
 
 // epochOrders retrieves all epoch orders for the specified market.
-func (a *Archiver) epochOrders(base, quote uint32) ([]*order.LimitOrder, []*order.MarketOrder, []*order.CancelOrder, error) {
+func (a *Archiver) epochOrders(base, quote uint32) ([]*order.MarketOrder, []*order.CancelOrder, error) {
 	marketSchema, err := a.marketSchema(base, quote)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	tableName := fullOrderTableName(a.dbName, marketSchema, true) // active (true)
@@ -357,16 +354,13 @@ func (a *Archiver) epochOrders(base, quote uint32) ([]*order.LimitOrder, []*orde
 	// no query timeout here, only explicit cancellation
 	ords, err := ordersByStatusFromTable(a.ctx, a.db, tableName, base, quote, orderStatusEpoch)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// Verify loaded order type and add to correct slice.
-	var limits []*order.LimitOrder
 	var markets []*order.MarketOrder
 	for _, ord := range ords {
 		switch o := ord.(type) {
-		case *order.LimitOrder:
-			limits = append(limits, o)
 		case *order.MarketOrder:
 			markets = append(markets, o)
 		default:
@@ -377,10 +371,10 @@ func (a *Archiver) epochOrders(base, quote uint32) ([]*order.LimitOrder, []*orde
 	tableName = fullCancelOrderTableName(a.dbName, marketSchema, true) // active(true)
 	cancels, err := cancelOrdersByStatusFromTable(a.ctx, a.db, tableName, base, quote, orderStatusEpoch)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	return limits, markets, cancels, nil
+	return markets, cancels, nil
 }
 
 // ActiveOrderCoins retrieves a CoinID slice for each active order.
@@ -434,8 +428,8 @@ func (a *Archiver) ActiveOrderCoins(base, quote uint32) (baseCoins, quoteCoins m
 }
 
 // BookOrder updates the given LimitOrder with booked status.
-func (a *Archiver) BookOrder(lo *order.LimitOrder) error {
-	return a.updateOrderStatus(lo, orderStatusBooked)
+func (a *Archiver) BookOrder(ord order.Order) error {
+	return a.updateOrderStatus(ord, orderStatusBooked)
 }
 
 // ExecuteOrder updates the given Order with executed status.
@@ -446,8 +440,8 @@ func (a *Archiver) ExecuteOrder(ord order.Order) error {
 // CancelOrder updates a LimitOrder with canceled status. If the order does not
 // exist in the Archiver, CancelOrder returns ErrUnknownOrder. To store a new
 // limit order with canceled status, use StoreOrder.
-func (a *Archiver) CancelOrder(lo *order.LimitOrder) error {
-	return a.updateOrderStatus(lo, orderStatusCanceled)
+func (a *Archiver) CancelOrder(ord order.Order) error {
+	return a.updateOrderStatus(ord, orderStatusCanceled)
 }
 
 // RevokeOrder updates an Order with revoked status, which is used for
@@ -589,13 +583,6 @@ func (a *Archiver) storeOrder(ord order.Order, epochIdx, epochDur int64, status 
 		if err != nil {
 			a.fatalBackendErr(err)
 			return fmt.Errorf("storeMarketOrder failed: %w", err)
-		}
-	case *order.LimitOrder:
-		tableName := fullOrderTableName(a.dbName, marketSchema, status.active())
-		N, err = storeLimitOrder(a.db, tableName, ot, status, epochIdx, epochDur)
-		if err != nil {
-			a.fatalBackendErr(err)
-			return fmt.Errorf("storeLimitOrder failed: %w", err)
 		}
 	default:
 		panic("ValidateOrder should have caught this")
@@ -1042,7 +1029,7 @@ func (a *Archiver) UpdateOrderFilledByID(oid order.OrderID, base, quote uint32, 
 // orders, not market or cancel orders. Market orders may only be updated by
 // ExecuteOrder since their filled amount only changes when their status
 // changes. See also UpdateOrderFilledByID.
-func (a *Archiver) UpdateOrderFilled(ord *order.LimitOrder) error {
+func (a *Archiver) UpdateOrderFilled(ord order.Order) error {
 	switch orderType := ord.Type(); orderType {
 	case order.MarketOrderType, order.LimitOrderType:
 	default:
@@ -1406,13 +1393,6 @@ func loadTradeFromTable(dbe *sql.DB, fullTable string, oid order.OrderID) (order
 		return nil, orderStatusUnknown, err
 	}
 	switch prefix.OrderType {
-	case order.LimitOrderType:
-		return &order.LimitOrder{
-			T:     *trade.Copy(), // govet would complain because Trade has a Mutex
-			P:     prefix,
-			Rate:  rate,
-			Force: tif,
-		}, status, nil
 	case order.MarketOrderType:
 		return &order.MarketOrder{
 			T: *trade.Copy(),
@@ -1508,13 +1488,6 @@ func ordersByStatusFromTable(ctx context.Context, dbe *sql.DB, fullTable string,
 
 		var ord order.Order
 		switch prefix.OrderType {
-		case order.LimitOrderType:
-			ord = &order.LimitOrder{
-				P:     prefix,
-				T:     *trade.Copy(),
-				Rate:  rate,
-				Force: tif,
-			}
 		case order.MarketOrderType:
 			ord = &order.MarketOrder{
 				P: prefix,
@@ -1566,13 +1539,6 @@ func userOrdersFromTable(ctx context.Context, dbe *sql.DB, fullTable string, bas
 
 		var ord order.Order
 		switch prefix.OrderType {
-		case order.LimitOrderType:
-			ord = &order.LimitOrder{
-				P:     prefix,
-				T:     *trade.Copy(),
-				Rate:  rate,
-				Force: tif,
-			}
 		case order.MarketOrderType:
 			ord = &order.MarketOrder{
 				P: prefix,
@@ -1637,13 +1603,6 @@ func orderForCommit(ctx context.Context, dbe *sql.DB, dbName, marketSchema strin
 		}
 	}
 	return false, zeroOrderID, nil
-}
-
-func storeLimitOrder(dbe sqlExecutor, tableName string, lo *order.LimitOrder, status pgOrderStatus, epochIdx, epochDur int64) (int64, error) {
-	stmt := fmt.Sprintf(internal.InsertOrder, tableName)
-	return sqlExec(dbe, stmt, lo.ID(), lo.Type(), lo.Sell, lo.AccountID,
-		lo.Address, lo.ClientTime, lo.ServerTime, lo.Commit, dbCoins(lo.Coins),
-		lo.Quantity, lo.Rate, lo.Force, status, lo.Filled(), epochIdx, epochDur)
 }
 
 func storeMarketOrder(dbe sqlExecutor, tableName string, mo *order.MarketOrder, status pgOrderStatus, epochIdx, epochDur int64) (int64, error) {

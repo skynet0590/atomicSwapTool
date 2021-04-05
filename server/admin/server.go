@@ -10,8 +10,10 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/skynet0590/atomicSwapTool/dex/msgjson"
 	"net/http"
 	"os"
 	"sync"
@@ -48,9 +50,9 @@ var (
 type SvrCore interface {
 	Accounts() (accts []*db.Account, err error)
 	AccountInfo(acctID account.AccountID) (*db.Account, error)
-	// Notify(acctID account.AccountID, msg *msgjson.Message)
-	// NotifyAll(msg *msgjson.Message)
-	//ConfigMsg() json.RawMessage
+	Notify(acctID account.AccountID, msg *msgjson.Message)
+	NotifyAll(msg *msgjson.Message)
+	ConfigMsg() json.RawMessage
 	//Asset(id uint32) (*asset.BackedAsset, error)
 	//SetFeeRateScale(assetID uint32, scale float64)
 	//ScaleFeeRate(assetID uint32, rate uint64) uint64
@@ -137,6 +139,16 @@ func NewServer(cfg *SrvConfig) (*Server, error) {
 	mux.Use(s.authMiddleware)
 
 	// api endpoints
+	mux.Route("/api", func(r chi.Router) {
+		r.Use(middleware.AllowContentType("text/plain"))
+		r.Get("/ping", apiPing)
+		r.Get("/accounts", s.apiAccounts)
+
+		r.Route("/account/{"+accountIDKey+"}", func(rm chi.Router) {
+			rm.Get("/", s.apiAccountInfo)
+			rm.Post("/notify", s.apiNotify)
+		})
+	})
 	/*mux.Route("/api", func(r chi.Router) {
 		r.Use(middleware.AllowContentType("text/plain"))
 		r.Get("/ping", apiPing)

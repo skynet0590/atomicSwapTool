@@ -221,19 +221,6 @@ var (
 // database storage. EncodeOrder accepts any type of Order.
 func EncodeOrder(ord Order) []byte {
 	switch o := ord.(type) {
-	case *LimitOrder:
-		tif := orderTifStanding
-		if o.Force == ImmediateTiF {
-			tif = orderTifImmediate
-		}
-		return encode.BuildyBytes{0}.
-			AddData(orderTypeLimit).
-			AddData(EncodePrefix(&o.P)).
-			AddData(EncodeTrade(&o.T)).
-			AddData(encode.BuildyBytes{}.
-				AddData(uint64B(o.Rate)).
-				AddData(tif),
-			)
 	case *MarketOrder:
 		return encode.BuildyBytes{0}.
 			AddData(orderTypeMarket).
@@ -272,38 +259,6 @@ func decodeOrder_v0(pushes [][]byte) (Order, error) {
 	oType := pushes[0]
 	pushes = pushes[1:]
 	switch {
-	case bEqual(oType, orderTypeLimit):
-		if len(pushes) != 3 {
-			return nil, fmt.Errorf("decodeOrder_v0: expected 3 pushes for limit order, got %d", len(pushes))
-		}
-		prefixB, tradeB, limitFlagsB := pushes[0], pushes[1], pushes[2]
-		prefix, err := DecodePrefix(prefixB)
-		if err != nil {
-			return nil, err
-		}
-		trade, err := DecodeTrade(tradeB)
-		if err != nil {
-			return nil, err
-		}
-		flags, err := encode.ExtractPushes(limitFlagsB)
-		if err != nil {
-			return nil, fmt.Errorf("decodeOrder_v0: error extracting limit flags: %w", err)
-		}
-		if len(flags) != 2 {
-			return nil, fmt.Errorf("decodeOrder_v0: expected 2 error flags, got %d", len(flags))
-		}
-		rateB, tifB := flags[0], flags[1]
-		tif := ImmediateTiF
-		if bEqual(tifB, orderTifStanding) {
-			tif = StandingTiF
-		}
-		return &LimitOrder{
-			P:     *prefix,
-			T:     *trade.Copy(),
-			Rate:  intCoder.Uint64(rateB),
-			Force: tif,
-		}, nil
-
 	case bEqual(oType, orderTypeMarket):
 		if len(pushes) != 2 {
 			return nil, fmt.Errorf("decodeOrder_v0: expected 2 pushes for market order, got %d", len(pushes))
