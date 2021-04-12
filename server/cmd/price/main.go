@@ -8,8 +8,11 @@ import (
 )
 
 func main() {
-	marketstream.UseLogger(dex.NewLogger("MP", dex.LevelTrace, os.Stdout))
-	stream, _ := marketstream.NewBinanceStream(marketstream.TradingPair{
+	log := dex.NewLogger("MP", dex.LevelTrace, os.Stdout)
+	marketstream.UseLogger(log)
+	stream, _ := marketstream.NewBinanceStream(func(symbol string, price marketstream.TradingPrice) {
+		log.Info(symbol, price)
+	},marketstream.TradingPair{
 		Base:  0,
 		Quote: 42,
 	})
